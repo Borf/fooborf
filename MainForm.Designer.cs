@@ -50,14 +50,15 @@
 			this.tabAlbumList = new System.Windows.Forms.TabPage();
 			this.tabAlbumTags = new System.Windows.Forms.TabPage();
 			this.tabControl1 = new System.Windows.Forms.TabControl();
-			this.tabPage1 = new System.Windows.Forms.TabPage();
-			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.tabQueue = new System.Windows.Forms.TabPage();
 			this.playList = new System.Windows.Forms.ListView();
 			this.Track = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Artist = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Title = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Album = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Filename = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.playingIndex = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.menuStrip1.SuspendLayout();
 			this.toolStrip1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -67,7 +68,7 @@
 			this.AlbumListTabstrip.SuspendLayout();
 			this.tabAlbumTree.SuspendLayout();
 			this.tabControl1.SuspendLayout();
-			this.tabPage1.SuspendLayout();
+			this.tabQueue.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// menuStrip1
@@ -236,7 +237,7 @@
 			this.tabAlbumList.Location = new System.Drawing.Point(4, 22);
 			this.tabAlbumList.Name = "tabAlbumList";
 			this.tabAlbumList.Padding = new System.Windows.Forms.Padding(3);
-			this.tabAlbumList.Size = new System.Drawing.Size(414, 533);
+			this.tabAlbumList.Size = new System.Drawing.Size(211, 546);
 			this.tabAlbumList.TabIndex = 1;
 			this.tabAlbumList.Text = "Explorer View";
 			this.tabAlbumList.UseVisualStyleBackColor = true;
@@ -246,14 +247,14 @@
 			this.tabAlbumTags.Location = new System.Drawing.Point(4, 22);
 			this.tabAlbumTags.Name = "tabAlbumTags";
 			this.tabAlbumTags.Padding = new System.Windows.Forms.Padding(3);
-			this.tabAlbumTags.Size = new System.Drawing.Size(414, 533);
+			this.tabAlbumTags.Size = new System.Drawing.Size(211, 546);
 			this.tabAlbumTags.TabIndex = 2;
 			this.tabAlbumTags.Text = "Tag view";
 			this.tabAlbumTags.UseVisualStyleBackColor = true;
 			// 
 			// tabControl1
 			// 
-			this.tabControl1.Controls.Add(this.tabPage1);
+			this.tabControl1.Controls.Add(this.tabQueue);
 			this.tabControl1.Controls.Add(this.tabPage2);
 			this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tabControl1.Location = new System.Drawing.Point(0, 0);
@@ -262,39 +263,35 @@
 			this.tabControl1.Size = new System.Drawing.Size(1062, 572);
 			this.tabControl1.TabIndex = 0;
 			// 
-			// tabPage1
+			// tabQueue
 			// 
-			this.tabPage1.Controls.Add(this.playList);
-			this.tabPage1.Location = new System.Drawing.Point(4, 22);
-			this.tabPage1.Name = "tabPage1";
-			this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage1.Size = new System.Drawing.Size(1054, 546);
-			this.tabPage1.TabIndex = 0;
-			this.tabPage1.Text = "Default Playlist";
-			this.tabPage1.UseVisualStyleBackColor = true;
-			// 
-			// tabPage2
-			// 
-			this.tabPage2.Location = new System.Drawing.Point(4, 22);
-			this.tabPage2.Name = "tabPage2";
-			this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage2.Size = new System.Drawing.Size(842, 533);
-			this.tabPage2.TabIndex = 1;
-			this.tabPage2.Text = "Mei\'s squeekings";
-			this.tabPage2.UseVisualStyleBackColor = true;
+			this.tabQueue.Controls.Add(this.playList);
+			this.tabQueue.Location = new System.Drawing.Point(4, 22);
+			this.tabQueue.Name = "tabQueue";
+			this.tabQueue.Padding = new System.Windows.Forms.Padding(3);
+			this.tabQueue.Size = new System.Drawing.Size(1054, 546);
+			this.tabQueue.TabIndex = 0;
+			this.tabQueue.Text = "Queue";
+			this.tabQueue.UseVisualStyleBackColor = true;
 			// 
 			// playList
 			// 
+			this.playList.AllowColumnReorder = true;
 			this.playList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.playingIndex,
             this.Track,
             this.Artist,
             this.Title,
             this.Album,
             this.Filename});
 			this.playList.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.playList.FullRowSelect = true;
 			this.playList.Location = new System.Drawing.Point(3, 3);
 			this.playList.Name = "playList";
+			this.playList.ShowGroups = false;
 			this.playList.Size = new System.Drawing.Size(1048, 540);
+			this.playList.SmallImageList = this.treeList;
+			this.playList.Sorting = System.Windows.Forms.SortOrder.Ascending;
 			this.playList.TabIndex = 0;
 			this.playList.UseCompatibleStateImageBehavior = false;
 			this.playList.View = System.Windows.Forms.View.Details;
@@ -319,6 +316,21 @@
 			// 
 			this.Filename.Text = "Filename";
 			// 
+			// tabPage2
+			// 
+			this.tabPage2.Location = new System.Drawing.Point(4, 22);
+			this.tabPage2.Name = "tabPage2";
+			this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPage2.Size = new System.Drawing.Size(1054, 546);
+			this.tabPage2.TabIndex = 1;
+			this.tabPage2.Text = "Mei\'s squeekings";
+			this.tabPage2.UseVisualStyleBackColor = true;
+			// 
+			// playingIndex
+			// 
+			this.playingIndex.Text = "";
+			this.playingIndex.Width = 14;
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -342,7 +354,7 @@
 			this.AlbumListTabstrip.ResumeLayout(false);
 			this.tabAlbumTree.ResumeLayout(false);
 			this.tabControl1.ResumeLayout(false);
-			this.tabPage1.ResumeLayout(false);
+			this.tabQueue.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -365,7 +377,7 @@
 		private System.Windows.Forms.SplitContainer splitContainer1;
 		private System.Windows.Forms.TreeView treeView1;
 		private System.Windows.Forms.TabControl tabControl1;
-		private System.Windows.Forms.TabPage tabPage1;
+		private System.Windows.Forms.TabPage tabQueue;
 		private System.Windows.Forms.TabPage tabPage2;
 		private System.Windows.Forms.TabControl AlbumListTabstrip;
 		private System.Windows.Forms.TabPage tabAlbumTree;
@@ -378,6 +390,7 @@
 		private System.Windows.Forms.ColumnHeader Title;
 		private System.Windows.Forms.ColumnHeader Album;
 		private System.Windows.Forms.ColumnHeader Filename;
+		private System.Windows.Forms.ColumnHeader playingIndex;
 		
 	}
 }

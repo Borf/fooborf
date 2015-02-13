@@ -24,7 +24,6 @@ namespace FooBorf
 		private byte[] buffer = new byte[1024];
 		private string data;
 		private List<String> response = new List<string>(); 
-
 		private List<String> commands = new List<string>(); 
 
 
@@ -34,10 +33,10 @@ namespace FooBorf
 			client = new TcpClient("borf.info", 6600);
 			stream = client.GetStream();
 			commands.Add("init");
-			Write("currentsong\n");
 			Write("lsinfo /\n");
+			Write("listplaylists\n");
 			Write("playlistinfo\n");
-
+			Write("currentsong\n");
 			stream.BeginRead(buffer, 0, 1024, onRead, null);
 		}
 
@@ -70,10 +69,30 @@ namespace FooBorf
 					{
 						Invoke(() =>
 						{
+							int pos = -1;
 							if (response.Count == 0)
 								Text = "Nothing Playing - [ FooBorf ]";
 							else
+							{
 								Text = response[4].Substring(8) + " - " + response[8].Substring(7) + " - [ FooBorf ]";
+								for(int i = 0; i < response.Count; i++)
+									if(response[i].Length > 5)
+										if(response[i].Substring(0, 5) == "Pos: ")
+											pos = int.Parse(response[i].Substring(5));
+							}
+
+							foreach (ListViewItem item in playList.Items)
+							{
+								if (((PlayListItem) item.Tag).pos == pos)
+								{
+									item.ImageIndex = 1;
+									item.EnsureVisible();
+								}
+								else
+									item.ImageIndex = -1;
+							}
+
+
 						});
 					}
 
@@ -156,30 +175,41 @@ namespace FooBorf
 						Invoke(() =>
 						{
 							bool first = true;
+							PlayListItem playlistItem = new PlayListItem();
 							for (int i = 0; i < response.Count; i++)
 							{
 								String type = response[i].Substring(0, response[i].IndexOf(": "));
 								String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+								playlistItem.set(type, value);
 								if (type == "file")
-									row[4] = value;
+									row[5] = value;
 								if (type == "Artist")
-									row[1] = value;
-								if (type == "Title")
 									row[2] = value;
-								if (type == "Track")
-									row[0] = value;
-								if (type == "Album")
+								if (type == "Title")
 									row[3] = value;
+								if (type == "Track")
+									row[1] = value;
+								if (type == "Album")
+									row[4] = value;
 
 								if (type == "file" && first)
 									first = false;
 								else if (type == "file" && !first)
-									playList.Items.Add(new ListViewItem(row));
+								{
+									var item = new ListViewItem(row);
+									item.Tag = playlistItem;
+									playList.Items.Add(item);
+									playlistItem = new PlayListItem();
+								}
 							}
 							playList.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
 						});
 					}
 
+					if(command == "listplaylists")
+					{
+						Console.WriteLine("Playlists!");
+					}
 
 					if (command == "previous" || command == "next")
 					{
@@ -231,6 +261,7 @@ namespace FooBorf
 		{
 			Write("lsinfo \"" + e.Node.Tag.ToString().Substring(1) + "\"\n");
 		}
+
 
 	}
 
