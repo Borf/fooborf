@@ -33,6 +33,7 @@
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.findToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.playbackToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.libraryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -51,14 +52,14 @@
 			this.tabAlbumTags = new System.Windows.Forms.TabPage();
 			this.tabControl1 = new System.Windows.Forms.TabControl();
 			this.tabQueue = new System.Windows.Forms.TabPage();
-			this.playList = new System.Windows.Forms.ListView();
+			this.queue = new System.Windows.Forms.ListView();
+			this.playingIndex = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Track = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Artist = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Title = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Album = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Filename = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.tabPage2 = new System.Windows.Forms.TabPage();
-			this.playingIndex = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.pingTimer = new System.Windows.Forms.Timer(this.components);
 			this.menuStrip1.SuspendLayout();
 			this.toolStrip1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -93,9 +94,20 @@
 			// 
 			// editToolStripMenuItem
 			// 
+			this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.findToolStripMenuItem});
 			this.editToolStripMenuItem.Name = "editToolStripMenuItem";
 			this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
 			this.editToolStripMenuItem.Text = "Edit";
+			// 
+			// findToolStripMenuItem
+			// 
+			this.findToolStripMenuItem.Name = "findToolStripMenuItem";
+			this.findToolStripMenuItem.ShortcutKeyDisplayString = "Ctrl+f";
+			this.findToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
+			this.findToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.findToolStripMenuItem.Text = "&Find";
+			this.findToolStripMenuItem.Click += new System.EventHandler(this.findToolStripMenuItem_Click);
 			// 
 			// playbackToolStripMenuItem
 			// 
@@ -137,6 +149,7 @@
 			this.btnPrev.Name = "btnPrev";
 			this.btnPrev.Size = new System.Drawing.Size(23, 22);
 			this.btnPrev.Text = "toolStripButton1";
+			this.btnPrev.ToolTipText = "Previous Song";
 			this.btnPrev.Click += new System.EventHandler(this.btnPrev_Click);
 			// 
 			// btnPlayPause
@@ -147,6 +160,7 @@
 			this.btnPlayPause.Name = "btnPlayPause";
 			this.btnPlayPause.Size = new System.Drawing.Size(23, 22);
 			this.btnPlayPause.Text = "toolStripButton2";
+			this.btnPlayPause.ToolTipText = "Play / Pause";
 			this.btnPlayPause.Click += new System.EventHandler(this.btnPlayPause_Click);
 			// 
 			// btnStop
@@ -157,6 +171,7 @@
 			this.btnStop.Name = "btnStop";
 			this.btnStop.Size = new System.Drawing.Size(23, 22);
 			this.btnStop.Text = "toolStripButton3";
+			this.btnStop.ToolTipText = "Stop";
 			// 
 			// btnNext
 			// 
@@ -166,6 +181,7 @@
 			this.btnNext.Name = "btnNext";
 			this.btnNext.Size = new System.Drawing.Size(23, 22);
 			this.btnNext.Text = "toolStripButton4";
+			this.btnNext.ToolTipText = "Next Song";
 			this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
 			// 
 			// toolStripComboBox1
@@ -254,18 +270,21 @@
 			// 
 			// tabControl1
 			// 
+			this.tabControl1.AllowDrop = true;
 			this.tabControl1.Controls.Add(this.tabQueue);
-			this.tabControl1.Controls.Add(this.tabPage2);
 			this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tabControl1.Location = new System.Drawing.Point(0, 0);
 			this.tabControl1.Name = "tabControl1";
 			this.tabControl1.SelectedIndex = 0;
 			this.tabControl1.Size = new System.Drawing.Size(1062, 572);
 			this.tabControl1.TabIndex = 0;
+			this.tabControl1.DragDrop += new System.Windows.Forms.DragEventHandler(this.tabControl1_DragDrop);
+			this.tabControl1.DragEnter += new System.Windows.Forms.DragEventHandler(this.tabControl1_DragEnter);
+			this.tabControl1.DragOver += new System.Windows.Forms.DragEventHandler(this.tabControl1_DragEnter);
 			// 
 			// tabQueue
 			// 
-			this.tabQueue.Controls.Add(this.playList);
+			this.tabQueue.Controls.Add(this.queue);
 			this.tabQueue.Location = new System.Drawing.Point(4, 22);
 			this.tabQueue.Name = "tabQueue";
 			this.tabQueue.Padding = new System.Windows.Forms.Padding(3);
@@ -274,27 +293,39 @@
 			this.tabQueue.Text = "Queue";
 			this.tabQueue.UseVisualStyleBackColor = true;
 			// 
-			// playList
+			// queue
 			// 
-			this.playList.AllowColumnReorder = true;
-			this.playList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+			this.queue.AllowColumnReorder = true;
+			this.queue.AllowDrop = true;
+			this.queue.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.playingIndex,
             this.Track,
             this.Artist,
             this.Title,
             this.Album,
             this.Filename});
-			this.playList.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.playList.FullRowSelect = true;
-			this.playList.Location = new System.Drawing.Point(3, 3);
-			this.playList.Name = "playList";
-			this.playList.ShowGroups = false;
-			this.playList.Size = new System.Drawing.Size(1048, 540);
-			this.playList.SmallImageList = this.treeList;
-			this.playList.Sorting = System.Windows.Forms.SortOrder.Ascending;
-			this.playList.TabIndex = 0;
-			this.playList.UseCompatibleStateImageBehavior = false;
-			this.playList.View = System.Windows.Forms.View.Details;
+			this.queue.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.queue.FullRowSelect = true;
+			this.queue.HideSelection = false;
+			this.queue.Location = new System.Drawing.Point(3, 3);
+			this.queue.Name = "queue";
+			this.queue.ShowGroups = false;
+			this.queue.Size = new System.Drawing.Size(1048, 540);
+			this.queue.SmallImageList = this.treeList;
+			this.queue.Sorting = System.Windows.Forms.SortOrder.Ascending;
+			this.queue.TabIndex = 0;
+			this.queue.UseCompatibleStateImageBehavior = false;
+			this.queue.View = System.Windows.Forms.View.Details;
+			this.queue.ItemDrag += new System.Windows.Forms.ItemDragEventHandler(this.queue_ItemDrag);
+			this.queue.DragDrop += new System.Windows.Forms.DragEventHandler(this.queue_DragDrop);
+			this.queue.DragEnter += new System.Windows.Forms.DragEventHandler(this.queue_DragEnter);
+			this.queue.DragOver += new System.Windows.Forms.DragEventHandler(this.queue_DragEnter);
+			this.queue.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.playList_MouseDoubleClick);
+			// 
+			// playingIndex
+			// 
+			this.playingIndex.Text = "";
+			this.playingIndex.Width = 14;
 			// 
 			// Track
 			// 
@@ -316,20 +347,11 @@
 			// 
 			this.Filename.Text = "Filename";
 			// 
-			// tabPage2
+			// pingTimer
 			// 
-			this.tabPage2.Location = new System.Drawing.Point(4, 22);
-			this.tabPage2.Name = "tabPage2";
-			this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage2.Size = new System.Drawing.Size(1054, 546);
-			this.tabPage2.TabIndex = 1;
-			this.tabPage2.Text = "Mei\'s squeekings";
-			this.tabPage2.UseVisualStyleBackColor = true;
-			// 
-			// playingIndex
-			// 
-			this.playingIndex.Text = "";
-			this.playingIndex.Width = 14;
+			this.pingTimer.Enabled = true;
+			this.pingTimer.Interval = 10000;
+			this.pingTimer.Tick += new System.EventHandler(this.pingTimer_Tick);
 			// 
 			// MainForm
 			// 
@@ -339,6 +361,7 @@
 			this.Controls.Add(this.splitContainer1);
 			this.Controls.Add(this.toolStrip1);
 			this.Controls.Add(this.menuStrip1);
+			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.MainMenuStrip = this.menuStrip1;
 			this.Name = "MainForm";
 			this.Text = "Fooborf";
@@ -376,21 +399,22 @@
 		private System.Windows.Forms.ToolStripComboBox toolStripComboBox1;
 		private System.Windows.Forms.SplitContainer splitContainer1;
 		private System.Windows.Forms.TreeView treeView1;
-		private System.Windows.Forms.TabControl tabControl1;
+		public System.Windows.Forms.TabControl tabControl1;
 		private System.Windows.Forms.TabPage tabQueue;
-		private System.Windows.Forms.TabPage tabPage2;
 		private System.Windows.Forms.TabControl AlbumListTabstrip;
 		private System.Windows.Forms.TabPage tabAlbumTree;
 		private System.Windows.Forms.TabPage tabAlbumList;
 		private System.Windows.Forms.TabPage tabAlbumTags;
-		private System.Windows.Forms.ImageList treeList;
-		private System.Windows.Forms.ListView playList;
+		private System.Windows.Forms.ListView queue;
 		private System.Windows.Forms.ColumnHeader Track;
 		private System.Windows.Forms.ColumnHeader Artist;
 		private System.Windows.Forms.ColumnHeader Title;
 		private System.Windows.Forms.ColumnHeader Album;
 		private System.Windows.Forms.ColumnHeader Filename;
 		private System.Windows.Forms.ColumnHeader playingIndex;
+		public System.Windows.Forms.ImageList treeList;
+		private System.Windows.Forms.Timer pingTimer;
+		private System.Windows.Forms.ToolStripMenuItem findToolStripMenuItem;
 		
 	}
 }

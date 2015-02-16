@@ -14,9 +14,11 @@ namespace FooBorf
 		[STAThread]
 		static void Main()
 		{
+			Hooker.Init();
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.Run(new MainForm());
+			Hooker.Dispose();
 		}
 	}
 }

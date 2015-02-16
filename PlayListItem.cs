@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FooBorf
 {
-	class PlayListItem
+	public class PlayListItem
 	{
 		public String number;
 		public String file;
@@ -41,10 +41,15 @@ namespace FooBorf
 				time = int.Parse(value);
 			else if (type == "Date")
 				date = value;
-			else if (type == "Last-Modified" || type == "Disc" || type == "AlbumArtist" || type == "Composer")
+			else if (type == "Last-Modified" || type == "Disc" || type == "AlbumArtist" || type == "Composer" || type == "Performer" || type == "ArtistSort" || type == "MUSICBRAINZ_ARTISTID" || type == "MUSICBRAINZ_ALBUMID" || type == "MUSICBRAINZ_TRACKID" || type == "AlbumArtistSort")
 				;
 			else
 				Console.WriteLine("Unknown value: " + type + " => " + value);
 		}
+		public override String ToString()
+		{
+			return file;
+		}
 	}
+
 }
