@@ -47,6 +47,13 @@
 			this.AlbumListTabstrip = new System.Windows.Forms.TabControl();
 			this.tabAlbumTree = new System.Windows.Forms.TabPage();
 			this.treeView1 = new System.Windows.Forms.TreeView();
+			this.libraryMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.queueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.afterThisSongsamePriorityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.afterThisSonghigherPriorityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.afterThisSonghigherPriorityIncrementToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.addToCurrentPlaylistToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.createPlaylistToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.treeList = new System.Windows.Forms.ImageList(this.components);
 			this.tabAlbumList = new System.Windows.Forms.TabPage();
 			this.tabAlbumTags = new System.Windows.Forms.TabPage();
@@ -57,9 +64,18 @@
 			this.Track = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Artist = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Title = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.Album = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Filename = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.pingTimer = new System.Windows.Forms.Timer(this.components);
+			this.tabMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.renameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.addToQueueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.replaceQueueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.queueMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.playToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.enqueueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.deleteToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.updateThisFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuStrip1.SuspendLayout();
 			this.toolStrip1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -68,8 +84,11 @@
 			this.splitContainer1.SuspendLayout();
 			this.AlbumListTabstrip.SuspendLayout();
 			this.tabAlbumTree.SuspendLayout();
+			this.libraryMenu.SuspendLayout();
 			this.tabControl1.SuspendLayout();
 			this.tabQueue.SuspendLayout();
+			this.tabMenu.SuspendLayout();
+			this.queueMenu.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// menuStrip1
@@ -105,7 +124,7 @@
 			this.findToolStripMenuItem.Name = "findToolStripMenuItem";
 			this.findToolStripMenuItem.ShortcutKeyDisplayString = "Ctrl+f";
 			this.findToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
-			this.findToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.findToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
 			this.findToolStripMenuItem.Text = "&Find";
 			this.findToolStripMenuItem.Click += new System.EventHandler(this.findToolStripMenuItem_Click);
 			// 
@@ -231,6 +250,7 @@
 			// 
 			// treeView1
 			// 
+			this.treeView1.ContextMenuStrip = this.libraryMenu;
 			this.treeView1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.treeView1.ImageIndex = 0;
 			this.treeView1.ImageList = this.treeList;
@@ -240,6 +260,57 @@
 			this.treeView1.Size = new System.Drawing.Size(205, 540);
 			this.treeView1.TabIndex = 0;
 			this.treeView1.BeforeExpand += new System.Windows.Forms.TreeViewCancelEventHandler(this.treeView1_BeforeExpand);
+			// 
+			// libraryMenu
+			// 
+			this.libraryMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.queueToolStripMenuItem,
+            this.addToCurrentPlaylistToolStripMenuItem,
+            this.createPlaylistToolStripMenuItem,
+            this.updateThisFolderToolStripMenuItem});
+			this.libraryMenu.Name = "libraryMenu";
+			this.libraryMenu.Size = new System.Drawing.Size(192, 114);
+			// 
+			// queueToolStripMenuItem
+			// 
+			this.queueToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.afterThisSongsamePriorityToolStripMenuItem,
+            this.afterThisSonghigherPriorityToolStripMenuItem,
+            this.afterThisSonghigherPriorityIncrementToolStripMenuItem});
+			this.queueToolStripMenuItem.Name = "queueToolStripMenuItem";
+			this.queueToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+			this.queueToolStripMenuItem.Text = "Queue";
+			// 
+			// afterThisSongsamePriorityToolStripMenuItem
+			// 
+			this.afterThisSongsamePriorityToolStripMenuItem.Name = "afterThisSongsamePriorityToolStripMenuItem";
+			this.afterThisSongsamePriorityToolStripMenuItem.Size = new System.Drawing.Size(297, 22);
+			this.afterThisSongsamePriorityToolStripMenuItem.Text = "After this song (same priority)";
+			// 
+			// afterThisSonghigherPriorityToolStripMenuItem
+			// 
+			this.afterThisSonghigherPriorityToolStripMenuItem.Name = "afterThisSonghigherPriorityToolStripMenuItem";
+			this.afterThisSonghigherPriorityToolStripMenuItem.Size = new System.Drawing.Size(297, 22);
+			this.afterThisSonghigherPriorityToolStripMenuItem.Text = "After this song (higher priority)";
+			// 
+			// afterThisSonghigherPriorityIncrementToolStripMenuItem
+			// 
+			this.afterThisSonghigherPriorityIncrementToolStripMenuItem.Name = "afterThisSonghigherPriorityIncrementToolStripMenuItem";
+			this.afterThisSonghigherPriorityIncrementToolStripMenuItem.Size = new System.Drawing.Size(297, 22);
+			this.afterThisSonghigherPriorityIncrementToolStripMenuItem.Text = "After this song (higher priority, increment)";
+			// 
+			// addToCurrentPlaylistToolStripMenuItem
+			// 
+			this.addToCurrentPlaylistToolStripMenuItem.Name = "addToCurrentPlaylistToolStripMenuItem";
+			this.addToCurrentPlaylistToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+			this.addToCurrentPlaylistToolStripMenuItem.Text = "Add to current playlist";
+			// 
+			// createPlaylistToolStripMenuItem
+			// 
+			this.createPlaylistToolStripMenuItem.Name = "createPlaylistToolStripMenuItem";
+			this.createPlaylistToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+			this.createPlaylistToolStripMenuItem.Text = "Create Playlist";
+			this.createPlaylistToolStripMenuItem.Click += new System.EventHandler(this.createPlaylistToolStripMenuItem_Click);
 			// 
 			// treeList
 			// 
@@ -271,6 +342,7 @@
 			// tabControl1
 			// 
 			this.tabControl1.AllowDrop = true;
+			this.tabControl1.ContextMenuStrip = this.tabMenu;
 			this.tabControl1.Controls.Add(this.tabQueue);
 			this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tabControl1.Location = new System.Drawing.Point(0, 0);
@@ -281,6 +353,7 @@
 			this.tabControl1.DragDrop += new System.Windows.Forms.DragEventHandler(this.tabControl1_DragDrop);
 			this.tabControl1.DragEnter += new System.Windows.Forms.DragEventHandler(this.tabControl1_DragEnter);
 			this.tabControl1.DragOver += new System.Windows.Forms.DragEventHandler(this.tabControl1_DragEnter);
+			this.tabControl1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.tabControl1_MouseDown);
 			// 
 			// tabQueue
 			// 
@@ -299,11 +372,11 @@
 			this.queue.AllowDrop = true;
 			this.queue.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.playingIndex,
-            this.Track,
             this.Artist,
+            this.Track,
             this.Title,
-            this.Album,
             this.Filename});
+			this.queue.ContextMenuStrip = this.queueMenu;
 			this.queue.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.queue.FullRowSelect = true;
 			this.queue.HideSelection = false;
@@ -333,15 +406,12 @@
 			// 
 			// Artist
 			// 
-			this.Artist.Text = "Artist";
+			this.Artist.DisplayIndex = 2;
+			this.Artist.Text = "Artist/Album";
 			// 
 			// Title
 			// 
 			this.Title.Text = "Title";
-			// 
-			// Album
-			// 
-			this.Album.Text = "Album";
 			// 
 			// Filename
 			// 
@@ -352,6 +422,80 @@
 			this.pingTimer.Enabled = true;
 			this.pingTimer.Interval = 10000;
 			this.pingTimer.Tick += new System.EventHandler(this.pingTimer_Tick);
+			// 
+			// tabMenu
+			// 
+			this.tabMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.renameToolStripMenuItem,
+            this.deleteToolStripMenuItem,
+            this.addToQueueToolStripMenuItem,
+            this.replaceQueueToolStripMenuItem});
+			this.tabMenu.Name = "contextMenuStrip1";
+			this.tabMenu.Size = new System.Drawing.Size(154, 92);
+			// 
+			// renameToolStripMenuItem
+			// 
+			this.renameToolStripMenuItem.Name = "renameToolStripMenuItem";
+			this.renameToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.renameToolStripMenuItem.Text = "Rename";
+			this.renameToolStripMenuItem.Click += new System.EventHandler(this.renameToolStripMenuItem_Click);
+			// 
+			// deleteToolStripMenuItem
+			// 
+			this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
+			this.deleteToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.deleteToolStripMenuItem.Text = "Delete";
+			this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
+			// 
+			// addToQueueToolStripMenuItem
+			// 
+			this.addToQueueToolStripMenuItem.Name = "addToQueueToolStripMenuItem";
+			this.addToQueueToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.addToQueueToolStripMenuItem.Text = "Add to Queue";
+			this.addToQueueToolStripMenuItem.Click += new System.EventHandler(this.addToQueueToolStripMenuItem_Click);
+			// 
+			// replaceQueueToolStripMenuItem
+			// 
+			this.replaceQueueToolStripMenuItem.Name = "replaceQueueToolStripMenuItem";
+			this.replaceQueueToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.replaceQueueToolStripMenuItem.Text = "Replace Queue";
+			this.replaceQueueToolStripMenuItem.Click += new System.EventHandler(this.replaceQueueToolStripMenuItem_Click);
+			// 
+			// queueMenu
+			// 
+			this.queueMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.playToolStripMenuItem,
+            this.enqueueToolStripMenuItem,
+            this.deleteToolStripMenuItem1});
+			this.queueMenu.Name = "queueMenu";
+			this.queueMenu.Size = new System.Drawing.Size(121, 70);
+			// 
+			// playToolStripMenuItem
+			// 
+			this.playToolStripMenuItem.Name = "playToolStripMenuItem";
+			this.playToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.playToolStripMenuItem.Text = "Play";
+			this.playToolStripMenuItem.Click += new System.EventHandler(this.playToolStripMenuItem_Click);
+			// 
+			// enqueueToolStripMenuItem
+			// 
+			this.enqueueToolStripMenuItem.Name = "enqueueToolStripMenuItem";
+			this.enqueueToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.enqueueToolStripMenuItem.Text = "Enqueue";
+			this.enqueueToolStripMenuItem.Click += new System.EventHandler(this.enqueueToolStripMenuItem_Click);
+			// 
+			// deleteToolStripMenuItem1
+			// 
+			this.deleteToolStripMenuItem1.Name = "deleteToolStripMenuItem1";
+			this.deleteToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+			this.deleteToolStripMenuItem1.Text = "Delete";
+			// 
+			// updateThisFolderToolStripMenuItem
+			// 
+			this.updateThisFolderToolStripMenuItem.Name = "updateThisFolderToolStripMenuItem";
+			this.updateThisFolderToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+			this.updateThisFolderToolStripMenuItem.Text = "Update this folder";
+			this.updateThisFolderToolStripMenuItem.Click += new System.EventHandler(this.updateThisFolderToolStripMenuItem_Click);
 			// 
 			// MainForm
 			// 
@@ -376,8 +520,11 @@
 			this.splitContainer1.ResumeLayout(false);
 			this.AlbumListTabstrip.ResumeLayout(false);
 			this.tabAlbumTree.ResumeLayout(false);
+			this.libraryMenu.ResumeLayout(false);
 			this.tabControl1.ResumeLayout(false);
 			this.tabQueue.ResumeLayout(false);
+			this.tabMenu.ResumeLayout(false);
+			this.queueMenu.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -409,13 +556,28 @@
 		private System.Windows.Forms.ColumnHeader Track;
 		private System.Windows.Forms.ColumnHeader Artist;
 		private System.Windows.Forms.ColumnHeader Title;
-		private System.Windows.Forms.ColumnHeader Album;
 		private System.Windows.Forms.ColumnHeader Filename;
 		private System.Windows.Forms.ColumnHeader playingIndex;
 		public System.Windows.Forms.ImageList treeList;
 		private System.Windows.Forms.Timer pingTimer;
 		private System.Windows.Forms.ToolStripMenuItem findToolStripMenuItem;
-		
+		private System.Windows.Forms.ContextMenuStrip libraryMenu;
+		private System.Windows.Forms.ToolStripMenuItem queueToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem afterThisSongsamePriorityToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem afterThisSonghigherPriorityToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem afterThisSonghigherPriorityIncrementToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem addToCurrentPlaylistToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem createPlaylistToolStripMenuItem;
+		private System.Windows.Forms.ContextMenuStrip tabMenu;
+		private System.Windows.Forms.ToolStripMenuItem renameToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem deleteToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem addToQueueToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem replaceQueueToolStripMenuItem;
+		private System.Windows.Forms.ContextMenuStrip queueMenu;
+		private System.Windows.Forms.ToolStripMenuItem playToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem enqueueToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem deleteToolStripMenuItem1;
+		private System.Windows.Forms.ToolStripMenuItem updateThisFolderToolStripMenuItem;
 	}
 }
 

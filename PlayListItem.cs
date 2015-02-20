@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace FooBorf
 {
@@ -18,6 +19,7 @@ namespace FooBorf
 		public int id;
 		public int time;
 		public string date;
+		public byte prio = 0;
 
 		public void set(string type, string value)
 		{
@@ -41,6 +43,8 @@ namespace FooBorf
 				time = int.Parse(value);
 			else if (type == "Date")
 				date = value;
+			else if (type == "Prio")
+				prio = byte.Parse(value);
 			else if (type == "Last-Modified" || type == "Disc" || type == "AlbumArtist" || type == "Composer" || type == "Performer" || type == "ArtistSort" || type == "MUSICBRAINZ_ARTISTID" || type == "MUSICBRAINZ_ALBUMID" || type == "MUSICBRAINZ_TRACKID" || type == "AlbumArtistSort")
 				;
 			else
@@ -50,6 +54,35 @@ namespace FooBorf
 		{
 			return file;
 		}
+
+		internal void set(PlayListItem i)
+		{
+			number = i.number;
+			file = i.file;
+			title = i.title;
+			artist = i.artist;
+			album = i.album;
+			genre = i.genre;
+			pos = i.pos;
+			id = i.id;
+			time = i.time;
+			date = i.date;
+			prio = i.prio;
+		}
+
+		public ListViewItem listViewItem()
+		{
+			var item = new ListViewItem(new string[]
+								{
+									null,
+									number,
+									artist + " - " + album,
+									title,
+									file,
+								}) { Tag = this };
+			return item;
+		}
+
 	}
 
 }

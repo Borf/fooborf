@@ -13,12 +13,17 @@ namespace FooBorf
 		(ToolStripItemDesignerAvailability.ToolStrip | ToolStripItemDesignerAvailability.StatusStrip)
 	]
 
+
 	public class ToolStripTraceBarItem : ToolStripControlHost
 	{
-		public TrackBar tb { get { return (TrackBar) this.Control;  } }
+		public bool isMouseDown = false;
+
+		public TrackBar tb { get { return (TrackBar)this.Control; } }
 		public ToolStripTraceBarItem()
 			: base(new TrackBar())
 		{
+			tb.MouseDown += (sender, args) => isMouseDown = true;
+			tb.MouseUp += (sender, args) => isMouseDown = false;
 
 		}
 	}

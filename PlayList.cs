@@ -32,10 +32,9 @@ namespace FooBorf
 			playingIndex.Text = "";
 			playingIndex.Width = 14;
 
+			Artist.Text = "Artist/Album";
 			Track.Text = "Track";
-			Artist.Text = "Artist";
 			Title.Text = "Title";
-			Album.Text = "Album";
 			Filename.Text = "Filename";
 
 			
@@ -44,10 +43,9 @@ namespace FooBorf
 			this.listview.AllowColumnReorder = true;
 			this.listview.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             playingIndex,
-            Track,
             Artist,
+            Track,
             Title,
-            Album,
             Filename});
 			this.listview.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.listview.FullRowSelect = true;
@@ -71,6 +69,28 @@ namespace FooBorf
 
 			this.tab.Controls.Add(listview);
 		}
+
+		public void update(PlayListItem playlistItem)
+		{
+			for (int i = 0; i < items.Count; i++)
+			{
+				if (items[i].id == playlistItem.id)
+				{
+					if (items[i].pos != playlistItem.pos || items[i].title != playlistItem.title || items[i].artist != playlistItem.artist || items[i].album != playlistItem.album || items[i].number != playlistItem.number)
+					{
+						listview.Items[playlistItem.pos] = playlistItem.listViewItem();
+					}
+					items[i].set(playlistItem);
+					return;
+				}
+			}
+
+			listview.Items.Add(playlistItem.listViewItem());
+			items.Add(playlistItem);
+
+		}
+
+
 
 	}
 }

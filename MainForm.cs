@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -29,10 +30,47 @@ namespace FooBorf
 		public PlayList activePlaylist = null;
 		public PlayList queuePlayList = null;
 		public string newSong = "";
+		private int playPos = -1;
+
+		private int queueIndex = 255;
+		private int playlistVersion;
+
+
+		private TcpClient idleClient;
+		private NetworkStream idleStream;
+		private byte[] idleBuffer = new byte[1024];
+		private string idleData;
+		private ToolStripTraceBarItem volumeSlider;
+		private ToolStripTraceBarItem playbackSlider;
 
 
 		private void MainForm_Load(object sender, EventArgs e)
 		{
+			volumeSlider = new ToolStripTraceBarItem();
+			volumeSlider.tb.TickStyle = TickStyle.None;
+			volumeSlider.tb.AutoSize = false;
+			volumeSlider.tb.Size = new Size(200, 32);
+			volumeSlider.tb.Minimum = 0;
+			volumeSlider.tb.Maximum = 100;
+			volumeSlider.tb.ValueChanged += (o, args) =>
+			{
+				Write("setvol " + volumeSlider.tb.Value + "\n");
+			};
+			volumeSlider.ToolTipText = "Volume";
+			volumeSlider.Alignment = ToolStripItemAlignment.Right;
+			toolStrip1.Items.Add(volumeSlider);
+
+
+			playbackSlider = new ToolStripTraceBarItem();
+			playbackSlider.tb.TickStyle = TickStyle.None;
+			playbackSlider.tb.AutoSize = false;
+			playbackSlider.tb.Size = new Size(500, 32);
+			playbackSlider.tb.Minimum = 0;
+			playbackSlider.tb.Maximum = 1000;
+			playbackSlider.ToolTipText = "Playback";
+			toolStrip1.Items.Add(playbackSlider);
+
+
 			Hooker.callback += (Keys key) =>
 			{
 				if(key == Keys.MediaNextTrack)
@@ -49,6 +87,89 @@ namespace FooBorf
 			Write("listplaylists\n");
 			Write("playlistinfo\n");
 			Write("currentsong\n");
+			Write("status\n");
+			idleConnect();
+		}
+
+		private void idleConnect()
+		{
+			Console.Write("Connecting idle...");
+			try
+			{
+				idleClient = new TcpClient("borf.info", 6600);
+				idleStream = idleClient.GetStream();
+				idleStream.BeginRead(idleBuffer, 0, 1024, onReadIdle, null);
+				Console.WriteLine("connected idle..");
+				byte[] bytes = Encoding.UTF8.GetBytes("idle\n");
+				idleStream.Write(bytes, 0, bytes.Length);
+			}
+			catch (IOException)
+			{
+				Thread.Sleep(5000);
+				idleConnect();
+			}
+		}
+
+		private void onReadIdle(IAsyncResult ar)
+		{
+			int rc = -1;
+			try
+			{
+				rc = idleStream.EndRead(ar);
+			}
+			catch (IOException)
+			{
+				idleClient.Close();
+				idleConnect();
+				return;
+			}
+			if (rc <= 0 || !idleClient.Connected)
+			{
+				idleClient.Close();
+				idleConnect();
+				return;
+			}
+			idleData += Encoding.UTF8.GetString(idleBuffer, 0, rc);
+			while (idleData.Contains("\n"))
+			{
+				string line = idleData.Substring(0, idleData.IndexOf("\n"));
+				idleData = idleData.Substring(idleData.IndexOf("\n") + 1);
+
+				if (line == "OK")
+				{
+					byte[] bytes = Encoding.UTF8.GetBytes("idle\n");
+					idleStream.Write(bytes, 0, bytes.Length);
+				}
+				else
+				{
+					if (line.IndexOf("changed: ") == 0)
+					{
+						string changes = line.Substring(9).Trim();
+						if (changes == "player")
+						{
+							Write("currentsong\n");
+						}
+						if (changes == "mixer")
+						{
+							if(!volumeSlider.isMouseDown)
+								Write("status\n");
+						}
+						if (changes == "stored_playlist")
+						{
+							Write("listplaylists\n");
+						}
+						if (changes == "playlist")
+						{
+							//todo: check version and changes since version etc...
+							//Write("playlistinfo\n");
+							Write("status\n");
+						}
+					}
+					Console.WriteLine("IDLE: " + line);
+				}
+
+			}
+			idleStream.BeginRead(idleBuffer, 0, 1024, onReadIdle, null);
 		}
 
 
@@ -115,6 +236,9 @@ namespace FooBorf
 									String value = response[i].Substring(response[i].IndexOf(": ") + 2);
 									playlistItem.set(type, value);
 								}
+								if (playlistItem.prio != 0)
+									Write("prio 0 " + playlistItem.pos + "\n");
+								playPos = playlistItem.pos;
 
 								if ((playlistItem.artist != "" || playlistItem.title != "") && (playlistItem.artist != null || playlistItem.title != null))
 									Text = playlistItem.artist  + " - " + playlistItem.title + " - [ FooBorf ]";
@@ -227,16 +351,7 @@ namespace FooBorf
 								first = false;
 							else if (type == "file" && !first)
 							{
-								var item = new ListViewItem(new string[]
-								{
-									null,
-									playlistItem.number,
-									playlistItem.artist,
-									playlistItem.title,
-									playlistItem.album,
-									playlistItem.file,
-								}) {Tag = playlistItem};
-								rows.Add(item);
+								rows.Add(playlistItem.listViewItem());
 								queuePlayList.items.Add(playlistItem);
 								playlistItem = new PlayListItem();
 							}
@@ -244,16 +359,7 @@ namespace FooBorf
 
 		
 						}
-						var item_ = new ListViewItem(new string[]
-								{
-									null,
-									playlistItem.number,
-									playlistItem.artist,
-									playlistItem.title,
-									playlistItem.album,
-									playlistItem.file,
-								}) { Tag = playlistItem };
-						rows.Add(item_);
+						rows.Add(playlistItem.listViewItem());
 						queuePlayList.items.Add(playlistItem);
 						Invoke(() =>
 						{
@@ -262,6 +368,11 @@ namespace FooBorf
 							queue.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
 						});
 						checkPlaylist();
+						int min = 256;
+						foreach (PlayListItem it in queuePlayList.items)
+							if (it.prio < min && it.prio != 0)
+								min = it.prio;
+						queueIndex = min - 1;
 					}
 
 					if(command == "listplaylists")
@@ -274,10 +385,17 @@ namespace FooBorf
 								String value = response[i].Substring(response[i].IndexOf(": ") + 2);
 								if (type == "playlist")
 								{
-									PlayList playlist = new PlayList(value, this);
-									this.tabControl1.Controls.Add(playlist.tab);
-									playlists.Add(playlist);
-									Write("listplaylistinfo " + value + "\n");
+									if (playlists.Any(p => p.name == value))
+									{
+										Write("listplaylistinfo \"" + value + "\"\n");
+									}
+									else
+									{
+										PlayList playlist = new PlayList(value, this);
+										this.tabControl1.Controls.Add(playlist.tab);
+										playlists.Add(playlist);
+										Write("listplaylistinfo \"" + value + "\"\n");
+									}
 								}
 
 							}
@@ -286,7 +404,7 @@ namespace FooBorf
 					}
 					if (commandcmd == "listplaylistinfo")
 					{
-						string name = command.Substring(17);
+						string name = command.Substring(17).Trim(new char[] { '"' });
 						PlayList playlist = null;
 						foreach(PlayList p in playlists)
 							if (p.name == name)
@@ -309,33 +427,14 @@ namespace FooBorf
 								first = false;
 							else if (type == "file" && !first)
 							{
-								var item = new ListViewItem(new string[]
-								{
-									null, 
-									playlistItem.number, 
-									playlistItem.artist,
-									playlistItem.title,
-									playlistItem.album,
-									playlistItem.file
-								}) {Tag = playlistItem};
-								rows.Add(item);
+								rows.Add(playlistItem.listViewItem());
 								playlist.items.Add(playlistItem);
 								playlistItem = new PlayListItem();
 							}
 							playlistItem.set(type, value);
 						}
-						var item_ = new ListViewItem(new string[]
-								{
-									null, 
-									playlistItem.number, 
-									playlistItem.artist,
-									playlistItem.title,
-									playlistItem.album,
-									playlistItem.file
-								}) { Tag = playlistItem };
-						rows.Add(item_);
+						rows.Add(playlistItem.listViewItem());
 						playlist.items.Add(playlistItem);
-						playlistItem = new PlayListItem();
 
 		
 						Invoke(() =>
@@ -347,14 +446,73 @@ namespace FooBorf
 						checkPlaylist();
 
 					}
-
-					if (command == "previous" || command == "next")
+					if (command == "status")
 					{
-						Write("currentsong\n");
+						for (int i = 0; i < response.Count; i++)
+						{
+							String type = response[i].Substring(0, response[i].IndexOf(": "));
+							String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+							if (type == "volume")
+								if(!volumeSlider.isMouseDown)
+									Invoke(() => volumeSlider.tb.Value = int.Parse(value));
+							if (type == "repeat")
+								;
+							if (type == "random")
+								;
+							if (type == "single")
+								;
+							if (type == "consome")
+								;
+							if (type == "state")
+								;
+							if (type == "time")
+								Invoke(() => playbackSlider.tb.Value = (int) Double.Parse(value.Replace(":", ".")));
+							if (type == "playlist")
+							{
+								int newplaylistVersion = int.Parse(value);
+								if (newplaylistVersion != playlistVersion && playlistVersion != 0)
+								{
+									Write("plchanges " + playlistVersion + "\n");
+								}
+								playlistVersion = newplaylistVersion;
+							}
+							if (type == "song")
+								; //playlist song number
+						}
+					}
+					if (commandcmd == "plchanges")
+					{
+						bool first = true;
+						PlayListItem playlistItem = new PlayListItem();
+
+						for (int i = 0; i < response.Count; i++)
+						{
+							String type = response[i].Substring(0, response[i].IndexOf(": "));
+							String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+							if (type == "file" && first)
+								first = false;
+							else if (type == "file" && !first)
+							{
+								Invoke(() => queuePlayList.update(playlistItem));
+							}
+							playlistItem.set(type, value);
+
+
+						}
+						Invoke(() => queuePlayList.update(playlistItem));
+
+						int min = 256;
+						foreach (PlayListItem it in queuePlayList.items)
+							if (it.prio < min && it.prio != 0)
+								min = it.prio;
+						queueIndex = min - 1;
+
+
 					}
 
 					response.Clear();
 				}
+
 
 			}
 
@@ -398,7 +556,7 @@ namespace FooBorf
 			}
 			commands.AddRange(s.Split(new Char [] { '\n' }, StringSplitOptions.RemoveEmptyEntries));
 
-			Console.WriteLine("SENDING " + s.Trim());
+//			Console.WriteLine("SENDING " + s.Trim());
 			byte[] bytes = Encoding.UTF8.GetBytes(s);
 			stream.Write(bytes, 0, bytes.Length);
 		}
@@ -406,11 +564,19 @@ namespace FooBorf
 		private void Connect()
 		{
 			Console.Write("Connecting...");
-			client = new TcpClient("borf.info", 6600);
-			stream = client.GetStream();
-			commands.Add("init");
-			stream.BeginRead(buffer, 0, 1024, onRead, null);
-			Console.WriteLine("connected...");
+			try
+			{
+				client = new TcpClient("borf.info", 6600);
+				stream = client.GetStream();
+				commands.Add("init");
+				stream.BeginRead(buffer, 0, 1024, onRead, null);
+				Console.WriteLine("connected...");
+			}
+			catch (IOException)
+			{
+				Thread.Sleep(5000);
+				Connect();
+			}
 		}
 
 		public void Invoke(Action action)
@@ -434,6 +600,10 @@ namespace FooBorf
 		private void pingTimer_Tick(object sender, EventArgs e)
 		{
 			Write("ping\n");
+			
+			byte[] bytes = Encoding.UTF8.GetBytes("noidle\n");
+			idleStream.Write(bytes, 0, bytes.Length);
+
 		}
 
 
@@ -560,7 +730,6 @@ namespace FooBorf
 			if (id == 0)
 			{
 				Write("play " + ((PlayListItem) item.Tag).pos + "\n");
-				Write("currentsong\n");
 			}
 			else
 			{
@@ -569,15 +738,116 @@ namespace FooBorf
 				if (activePlaylist != p)
 				{
 					Write("clear\n");
-					Write("load " + p.name + "\n");
+					Write("load \"" + p.name + "\"\n");
 					Write("playlistinfo\n");
 				}
 
 				newSong = ((PlayListItem)item.Tag).file;
-				Write("currentsong\n");
 			}
 
 
+
+		}
+
+		private void createPlaylistToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			string name = Prompt.ShowDialog("Playlist name?", "playlist");
+			if (string.IsNullOrEmpty(name))
+				return;
+			string tag = (string)treeView1.SelectedNode.Tag;
+			if (tag[0] == 'D')
+			{
+				string cmds = "";
+/*				cmds += "rm tmp\n";
+				cmds += "save tmp\n";
+				cmds += "clear\n";
+				cmds += "add \"" + tag.Substring(1) + "\"\n";
+				cmds += "rm \"" + name + "\"\n";
+				cmds += "save \"" + name + "\"\n";
+				cmds += "clear\n";
+				cmds += "load tmp\n";
+				cmds += "rm tmp\n";
+				cmds += "play " + playPos + "\n";*/
+
+				cmds += "playlistclear \"" + name + "\"\n";
+				cmds += "playlistadd \"" + name + "\" \"" + tag.Substring(1) + "\"\n";
+
+				Write(cmds);
+			}
+		}
+
+		private void deleteToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			int index = tabControl1.SelectedIndex;
+			if (index > 0)
+			{
+				index--;
+				Write("rm \"" + playlists[index].name + "\"\n");
+				tabControl1.Controls.Remove(playlists[index].tab);
+				playlists.RemoveAt(index);
+			}
+		}
+
+		private void tabControl1_MouseDown(object sender, MouseEventArgs e)
+		{
+			for (int i = 0; i < tabControl1.TabCount; ++i)
+				if (tabControl1.GetTabRect(i).Contains(e.Location))
+					tabControl1.SelectTab(i);
+
+			tabMenu.Enabled = tabControl1.SelectedIndex != 0;
+		}
+
+		private void renameToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			string oldName = playlists[tabControl1.SelectedIndex - 1].name;
+			string name = Prompt.ShowDialog("New name?", oldName);
+			if (string.IsNullOrEmpty(name))
+				return;
+			playlists[tabControl1.SelectedIndex - 1].name = name;
+			playlists[tabControl1.SelectedIndex - 1].tab.Text = name;
+			playlists[tabControl1.SelectedIndex - 1].tab.Name = name;
+			Write("rename \""+oldName+"\" \""+name+"\"\n");
+
+		}
+
+		private void addToQueueToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			string name = playlists[tabControl1.SelectedIndex - 1].name;
+			Write("load \"" + name + "\"\n");
+			Write("playlistinfo\n");
+		}
+
+		private void replaceQueueToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			string name = playlists[tabControl1.SelectedIndex - 1].name;
+			Write("clear\n");
+			Write("load \"" + name + "\"\n");
+			Write("play 0\n");
+		}
+
+		private void playToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if(queue.SelectedItems.Count > 0)
+				activateItem(queue.SelectedItems[0]);
+		}
+
+		private void enqueueToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			foreach (ListViewItem it in queue.SelectedItems)
+			{
+				Write("prio " + queueIndex + " " + ((PlayListItem)it.Tag).pos + "\n");
+				queueIndex--;
+			}
+
+		}
+
+		private void updateThisFolderToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			string tag = (string)treeView1.SelectedNode.Tag;
+			if (tag[0] == 'D')
+			{
+				Write("update \"" + tag.Substring(1) + "\"\n");
+			}
 
 		}
 	}
