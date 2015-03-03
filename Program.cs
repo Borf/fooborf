@@ -14,11 +14,18 @@ namespace FooBorf
 		[STAThread]
 		static void Main()
 		{
-			Hooker.Init();
+			bool hooked = false;
+			if (!System.Diagnostics.Debugger.IsAttached)
+			{
+				Hooker.Init();
+				hooked = true;
+			}
+
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.Run(new MainForm());
-			Hooker.Dispose();
+			if(hooked)
+				Hooker.Dispose();
 		}
 	}
 }

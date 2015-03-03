@@ -70,27 +70,37 @@ namespace FooBorf
 			this.tab.Controls.Add(listview);
 		}
 
-		public void update(PlayListItem playlistItem)
+		/// <returns>Returns true if the item is added, false if it is updated</returns>
+		public bool update(PlayListItem playlistItem)
 		{
 			for (int i = 0; i < items.Count; i++)
 			{
-				if (items[i].id == playlistItem.id)
+				if (items[i].pos == playlistItem.pos)
 				{
 					if (items[i].pos != playlistItem.pos || items[i].title != playlistItem.title || items[i].artist != playlistItem.artist || items[i].album != playlistItem.album || items[i].number != playlistItem.number)
 					{
+						//while (playlistItem.pos > listview.Items.Count)
+						//	listview.Items.Add(new ListViewItem("..."));
 						listview.Items[playlistItem.pos] = playlistItem.listViewItem();
 					}
 					items[i].set(playlistItem);
-					return;
+					return false;
 				}
 			}
 
 			listview.Items.Add(playlistItem.listViewItem());
 			items.Add(playlistItem);
-
+			return true;
 		}
 
 
+		public void setSize(int size)
+		{
+			if(items.Count > size)
+				items.RemoveRange(size, items.Count-size);
 
+			while(listview.Items.Count > size)
+				listview.Items.RemoveAt(listview.Items.Count-1);
+		}
 	}
 }

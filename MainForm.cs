@@ -31,6 +31,16 @@ namespace FooBorf
 		public PlayList queuePlayList = null;
 		public string newSong = "";
 		private int playPos = -1;
+		private bool running = true;
+
+		private enum NewQueuePrio
+		{
+			NONE,
+			SAME,
+			INC,
+		};
+		NewQueuePrio prionewsongs =NewQueuePrio.NONE;
+
 
 		private int queueIndex = 255;
 		private int playlistVersion;
@@ -93,6 +103,8 @@ namespace FooBorf
 
 		private void idleConnect()
 		{
+			if (!running)
+				return;
 			Console.Write("Connecting idle...");
 			try
 			{
@@ -103,7 +115,7 @@ namespace FooBorf
 				byte[] bytes = Encoding.UTF8.GetBytes("idle\n");
 				idleStream.Write(bytes, 0, bytes.Length);
 			}
-			catch (IOException)
+			catch (Exception)
 			{
 				Thread.Sleep(5000);
 				idleConnect();
@@ -112,6 +124,8 @@ namespace FooBorf
 
 		private void onReadIdle(IAsyncResult ar)
 		{
+			if (!running)
+				return;
 			int rc = -1;
 			try
 			{
@@ -175,12 +189,14 @@ namespace FooBorf
 
 		void onRead(IAsyncResult ar)
 		{
+			if (!running)
+				return;
 			int rc = -1;
 			try
 			{
 				rc = stream.EndRead(ar);
 			}
-			catch (IOException)
+			catch (Exception)
 			{
 				client.Close();
 				Connect();
@@ -214,302 +230,323 @@ namespace FooBorf
 					Console.Out.WriteLine("OK");
 					string command = commands[0];
 					commands.RemoveAt(0);
-
-					string commandcmd = command;
-					if (commandcmd.Contains(" "))
-						commandcmd = commandcmd.Substring(0, commandcmd.IndexOf(" "));
-
-
-					if (command == "currentsong")
+					if (command != null)
 					{
-						Invoke(() =>
+						string commandcmd = command;
+						if (commandcmd.Contains(" "))
+							commandcmd = commandcmd.Substring(0, commandcmd.IndexOf(" "));
+
+
+						if (command == "currentsong")
 						{
-							int pos = -1;
-							if (response.Count == 0)
-								Text = "Nothing Playing - [ FooBorf ]";
-							else
+							Invoke(() =>
 							{
-								PlayListItem playlistItem = new PlayListItem();
-								for (int i = 0; i < response.Count; i++)
-								{
-									String type = response[i].Substring(0, response[i].IndexOf(": "));
-									String value = response[i].Substring(response[i].IndexOf(": ") + 2);
-									playlistItem.set(type, value);
-								}
-								if (playlistItem.prio != 0)
-									Write("prio 0 " + playlistItem.pos + "\n");
-								playPos = playlistItem.pos;
-
-								if ((playlistItem.artist != "" || playlistItem.title != "") && (playlistItem.artist != null || playlistItem.title != null))
-									Text = playlistItem.artist  + " - " + playlistItem.title + " - [ FooBorf ]";
+								int pos = -1;
+								if (response.Count == 0)
+									Text = "Nothing Playing - [ FooBorf ]";
 								else
-									Text = playlistItem.file.Substring(playlistItem.file.LastIndexOf("/")+1) + " - [ FooBorf ]";
-								pos = playlistItem.pos;
-							}
-
-							foreach (ListViewItem item in queue.Items)
-							{
-								if (((PlayListItem) item.Tag).pos == pos)
 								{
-									item.ImageIndex = 1;
-									item.EnsureVisible();
-								}
-								else
-									item.ImageIndex = -1;
-							}
-
-
-						});
-					}
-
-					if (commandcmd == "lsinfo")
-					{
-						Invoke(() =>
-						{
-							if (command.Substring(7) == "/")
-							{
-								for (int i = 0; i < response.Count; i+=2)
-								{
-									if (response[i].Substring(0, 11) == "directory: ")
+									PlayListItem playlistItem = new PlayListItem();
+									for (int i = 0; i < response.Count; i++)
 									{
-										TreeNode node = new TreeNode(response[i].Substring(11));
-										node.Tag = "D" + node.Text;
-										node.Nodes.Add(new TreeNode("...") {Tag = "dummy"});
-										treeView1.Nodes.Add(node);
+										String type = response[i].Substring(0, response[i].IndexOf(": "));
+										String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+										playlistItem.set(type, value);
+									}
+									if (playlistItem.prio != 0)
+										Write("prio 0 " + playlistItem.pos + "\n");
+									playPos = playlistItem.pos;
+
+									if ((playlistItem.artist != "" || playlistItem.title != "") &&
+									    (playlistItem.artist != null || playlistItem.title != null))
+										Text = playlistItem.artist + " - " + playlistItem.title + " - [ FooBorf ]";
+									else
+										Text = playlistItem.file.Substring(playlistItem.file.LastIndexOf("/") + 1) + " - [ FooBorf ]";
+									pos = playlistItem.pos;
+								}
+
+								foreach (ListViewItem item in queue.Items)
+								{
+									if (((PlayListItem) item.Tag).pos == pos)
+									{
+										item.ImageIndex = 1;
+										item.EnsureVisible();
+									}
+									else
+										item.ImageIndex = -1;
+								}
+
+
+							});
+						}
+
+						if (commandcmd == "lsinfo")
+						{
+							Invoke(() =>
+							{
+								if (command.Substring(7) == "/")
+								{
+									for (int i = 0; i < response.Count; i += 2)
+									{
+										if (response[i].Substring(0, 11) == "directory: ")
+										{
+											TreeNode node = new TreeNode(response[i].Substring(11));
+											node.Tag = "D" + node.Text;
+											node.Nodes.Add(new TreeNode("...") {Tag = "dummy"});
+											treeView1.Nodes.Add(node);
+										}
 									}
 								}
-							}
-							else
-							{
-								string dir = command.Substring(7).Trim(new char[] { '"' });
-								var dirs = dir.Split(new char[] {'/'});
-								TreeNodeCollection n = treeView1.Nodes;
-								for (int i = 0; i < dirs.Length; i++)
+								else
 								{
-									for (int ii = 0; ii < n.Count; ii++)
+									string dir = command.Substring(7).Trim(new char[] {'"'});
+									var dirs = dir.Split(new char[] {'/'});
+									TreeNodeCollection n = treeView1.Nodes;
+									for (int i = 0; i < dirs.Length; i++)
 									{
-										if (n[ii].Text == dirs[i])
+										for (int ii = 0; ii < n.Count; ii++)
 										{
-											n = n[ii].Nodes;
-											break;
+											if (n[ii].Text == dirs[i])
+											{
+												n = n[ii].Nodes;
+												break;
+											}
+										}
+
+
+									}
+									n.Clear();
+									for (int i = 0; i < response.Count; i++)
+									{
+										if (response[i].Length < 5)
+											continue;
+										if (response[i].Substring(0, 6) == "file: ")
+										{
+											TreeNode node = new TreeNode(response[i].Substring(6));
+											node.Tag = "F" + node.Text;
+											node.ImageIndex = 1;
+											node.SelectedImageIndex = 1;
+											node.Text = node.Text.Substring(node.Text.LastIndexOf('/') + 1);
+											n.Add(node);
+										}
+
+
+										if (response[i].Length < 11)
+											continue;
+										if (response[i].Substring(0, 11) == "directory: ")
+										{
+											TreeNode node = new TreeNode(response[i].Substring(11));
+											node.ImageIndex = 0;
+											node.Tag = "D" + node.Text;
+											node.Text = node.Text.Substring(node.Text.LastIndexOf('/') + 1);
+											node.Nodes.Add(new TreeNode("...") {Tag = "dummy"});
+											n.Add(node);
 										}
 									}
 
 
+
+
+
 								}
-								n.Clear();
+							});
+						}
+
+						if (command == "playlistinfo")
+						{
+
+							bool first = true;
+							PlayListItem playlistItem = new PlayListItem();
+							List<ListViewItem> rows = new List<ListViewItem>();
+							queuePlayList = new PlayList(null, null);
+							queuePlayList.listview = queue;
+
+							for (int i = 0; i < response.Count; i++)
+							{
+								String type = response[i].Substring(0, response[i].IndexOf(": "));
+								String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+								if (type == "file" && first)
+									first = false;
+								else if (type == "file" && !first)
+								{
+									rows.Add(playlistItem.listViewItem());
+									queuePlayList.items.Add(playlistItem);
+									playlistItem = new PlayListItem();
+								}
+								playlistItem.set(type, value);
+
+
+							}
+							rows.Add(playlistItem.listViewItem());
+							queuePlayList.items.Add(playlistItem);
+							Invoke(() =>
+							{
+								queue.Items.Clear();
+								queue.Items.AddRange(rows.ToArray());
+								queue.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+							});
+							checkPlaylist();
+							int min = 256;
+							foreach (PlayListItem it in queuePlayList.items)
+								if (it.prio < min && it.prio != 0)
+									min = it.prio;
+							queueIndex = min - 1;
+						}
+
+						if (command == "listplaylists")
+						{
+							Invoke(() =>
+							{
 								for (int i = 0; i < response.Count; i++)
 								{
-									if (response[i].Length < 5)
-										continue;
-									if (response[i].Substring(0, 6) == "file: ")
+									String type = response[i].Substring(0, response[i].IndexOf(": "));
+									String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+									if (type == "playlist")
 									{
-										TreeNode node = new TreeNode(response[i].Substring(11));
-										node.Tag = "F" + node.Text;
-										node.ImageIndex = 1;
-										node.SelectedImageIndex = 1;
-										node.Text = node.Text.Substring(node.Text.LastIndexOf('/') + 1);
-										n.Add(node);
+										if (playlists.Any(p => p.name == value))
+										{
+											Write("listplaylistinfo \"" + value + "\"\n");
+										}
+										else
+										{
+											PlayList playlist = new PlayList(value, this);
+											this.tabControl1.Controls.Add(playlist.tab);
+											playlists.Add(playlist);
+											Write("listplaylistinfo \"" + value + "\"\n");
+										}
 									}
 
-
-									if (response[i].Length < 11)
-										continue;
-									if (response[i].Substring(0, 11) == "directory: ")
-									{
-										TreeNode node = new TreeNode(response[i].Substring(11));
-										node.ImageIndex = 0;
-										node.Tag = "D" + node.Text;
-										node.Text = node.Text.Substring(node.Text.LastIndexOf('/') + 1);
-										node.Nodes.Add(new TreeNode("...") { Tag = "dummy" });
-										n.Add(node);
-									}
 								}
 
-
-
-
-
-							}
-						});
-					}
-
-					if (command == "playlistinfo")
-					{
-
-						bool first = true;
-						PlayListItem playlistItem = new PlayListItem();
-						List<ListViewItem> rows = new List<ListViewItem>();
-						queuePlayList = new PlayList(null, null);
-						queuePlayList.listview = queue;
-
-						for (int i = 0; i < response.Count; i++)
-						{
-							String type = response[i].Substring(0, response[i].IndexOf(": "));
-							String value = response[i].Substring(response[i].IndexOf(": ") + 2);
-							if (type == "file" && first)
-								first = false;
-							else if (type == "file" && !first)
-							{
-								rows.Add(playlistItem.listViewItem());
-								queuePlayList.items.Add(playlistItem);
-								playlistItem = new PlayListItem();
-							}
-							playlistItem.set(type, value);
-
-		
+							});
 						}
-						rows.Add(playlistItem.listViewItem());
-						queuePlayList.items.Add(playlistItem);
-						Invoke(() =>
+						if (commandcmd == "listplaylistinfo")
 						{
-							queue.Items.Clear();
-							queue.Items.AddRange(rows.ToArray());
-							queue.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
-						});
-						checkPlaylist();
-						int min = 256;
-						foreach (PlayListItem it in queuePlayList.items)
-							if (it.prio < min && it.prio != 0)
-								min = it.prio;
-						queueIndex = min - 1;
-					}
+							string name = command.Substring(17).Trim(new char[] {'"'});
+							PlayList playlist = null;
+							foreach (PlayList p in playlists)
+								if (p.name == name)
+									playlist = p;
+							if (playlist == null)
+								Console.WriteLine("UHOH, playlist not found");
 
-					if(command == "listplaylists")
-					{
-						Invoke(() =>
+
+							bool first = true;
+
+							PlayListItem playlistItem = new PlayListItem();
+							List<ListViewItem> rows = new List<ListViewItem>();
+
+							for (int i = 0; i < response.Count; i++)
+							{
+								String type = response[i].Substring(0, response[i].IndexOf(": "));
+								String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+
+								if (type == "file" && first)
+									first = false;
+								else if (type == "file" && !first)
+								{
+									rows.Add(playlistItem.listViewItem());
+									playlist.items.Add(playlistItem);
+									playlistItem = new PlayListItem();
+								}
+								playlistItem.set(type, value);
+							}
+							rows.Add(playlistItem.listViewItem());
+							playlist.items.Add(playlistItem);
+
+
+							Invoke(() =>
+							{
+								playlist.listview.Items.Clear();
+								playlist.listview.Items.AddRange(rows.ToArray());
+								playlist.listview.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+							});
+							checkPlaylist();
+
+						}
+						if (command == "status")
 						{
 							for (int i = 0; i < response.Count; i++)
 							{
 								String type = response[i].Substring(0, response[i].IndexOf(": "));
 								String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+								if (type == "volume")
+									if (!volumeSlider.isMouseDown)
+										Invoke(() => volumeSlider.tb.Value = int.Parse(value));
+								if (type == "repeat")
+									;
+								if (type == "random")
+									;
+								if (type == "single")
+									;
+								if (type == "consome")
+									;
+								if (type == "state")
+									;
+								if (type == "time")
+									if (Double.Parse(value.Replace(":", ".")) < 1000)
+										Invoke(() => playbackSlider.tb.Value = (int) Double.Parse(value.Replace(":", ".")));
+								if (type == "playlistlength")
+									Invoke(() => queuePlayList.setSize(int.Parse(value)));
 								if (type == "playlist")
 								{
-									if (playlists.Any(p => p.name == value))
+									int newplaylistVersion = int.Parse(value);
+									if (newplaylistVersion != playlistVersion && playlistVersion != 0)
 									{
-										Write("listplaylistinfo \"" + value + "\"\n");
+										Write("plchanges " + playlistVersion + "\n");
 									}
-									else
-									{
-										PlayList playlist = new PlayList(value, this);
-										this.tabControl1.Controls.Add(playlist.tab);
-										playlists.Add(playlist);
-										Write("listplaylistinfo \"" + value + "\"\n");
-									}
+									playlistVersion = newplaylistVersion;
 								}
-
+								if (type == "song")
+									; //playlist song number
 							}
-
-						});
-					}
-					if (commandcmd == "listplaylistinfo")
-					{
-						string name = command.Substring(17).Trim(new char[] { '"' });
-						PlayList playlist = null;
-						foreach(PlayList p in playlists)
-							if (p.name == name)
-								playlist = p;
-						if(playlist == null)
-							Console.WriteLine("UHOH, playlist not found");
-
-
-						bool first = true;
-
-						PlayListItem playlistItem = new PlayListItem();
-						List<ListViewItem> rows = new List<ListViewItem>();
-
-						for (int i = 0; i < response.Count; i++)
-						{
-							String type = response[i].Substring(0, response[i].IndexOf(": "));
-							String value = response[i].Substring(response[i].IndexOf(": ") + 2);
-
-							if (type == "file" && first)
-								first = false;
-							else if (type == "file" && !first)
-							{
-								rows.Add(playlistItem.listViewItem());
-								playlist.items.Add(playlistItem);
-								playlistItem = new PlayListItem();
-							}
-							playlistItem.set(type, value);
 						}
-						rows.Add(playlistItem.listViewItem());
-						playlist.items.Add(playlistItem);
-
-		
-						Invoke(() =>
+						if (commandcmd == "plchanges")
 						{
-							playlist.listview.Items.Clear();
-							playlist.listview.Items.AddRange(rows.ToArray());
-							playlist.listview.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
-						});
-						checkPlaylist();
-
-					}
-					if (command == "status")
-					{
-						for (int i = 0; i < response.Count; i++)
-						{
-							String type = response[i].Substring(0, response[i].IndexOf(": "));
-							String value = response[i].Substring(response[i].IndexOf(": ") + 2);
-							if (type == "volume")
-								if(!volumeSlider.isMouseDown)
-									Invoke(() => volumeSlider.tb.Value = int.Parse(value));
-							if (type == "repeat")
-								;
-							if (type == "random")
-								;
-							if (type == "single")
-								;
-							if (type == "consome")
-								;
-							if (type == "state")
-								;
-							if (type == "time")
-								Invoke(() => playbackSlider.tb.Value = (int) Double.Parse(value.Replace(":", ".")));
-							if (type == "playlist")
+							List<int> newIds = new List<int>();
+							Invoke(() =>
 							{
-								int newplaylistVersion = int.Parse(value);
-								if (newplaylistVersion != playlistVersion && playlistVersion != 0)
+								bool first = true;
+								PlayListItem playlistItem = new PlayListItem();
+
+								for (int i = 0; i < response.Count; i++)
 								{
-									Write("plchanges " + playlistVersion + "\n");
+									String type = response[i].Substring(0, response[i].IndexOf(": "));
+									String value = response[i].Substring(response[i].IndexOf(": ") + 2);
+									if (type == "file" && first)
+										first = false;
+									else if (type == "file" && !first)
+									{
+										if (queuePlayList.update(playlistItem) && prionewsongs != NewQueuePrio.NONE)
+											newIds.Add(playlistItem.id);
+										playlistItem = new PlayListItem();
+									}
+									playlistItem.set(type, value);
 								}
-								playlistVersion = newplaylistVersion;
-							}
-							if (type == "song")
-								; //playlist song number
-						}
-					}
-					if (commandcmd == "plchanges")
-					{
-						bool first = true;
-						PlayListItem playlistItem = new PlayListItem();
+								if (queuePlayList.update(playlistItem) && prionewsongs != NewQueuePrio.NONE)
+									newIds.Add(playlistItem.id);
 
-						for (int i = 0; i < response.Count; i++)
-						{
-							String type = response[i].Substring(0, response[i].IndexOf(": "));
-							String value = response[i].Substring(response[i].IndexOf(": ") + 2);
-							if (type == "file" && first)
-								first = false;
-							else if (type == "file" && !first)
+							});
+
+							int min = 256;
+							foreach (PlayListItem it in queuePlayList.items)
+								if (it.prio < min && it.prio != 0)
+									min = it.prio;
+							queueIndex = min - 1;
+
+							if (prionewsongs != NewQueuePrio.NONE)
 							{
-								Invoke(() => queuePlayList.update(playlistItem));
+								foreach (int id in newIds)
+								{
+									Write("prioid " + queueIndex + " " + id + "\n");
+									if (prionewsongs == NewQueuePrio.INC)
+										queueIndex--;
+								}
 							}
-							playlistItem.set(type, value);
-
+							prionewsongs = NewQueuePrio.NONE;
 
 						}
-						Invoke(() => queuePlayList.update(playlistItem));
-
-						int min = 256;
-						foreach (PlayListItem it in queuePlayList.items)
-							if (it.prio < min && it.prio != 0)
-								min = it.prio;
-						queueIndex = min - 1;
-
-
 					}
-
 					response.Clear();
 				}
 
@@ -558,7 +595,15 @@ namespace FooBorf
 
 //			Console.WriteLine("SENDING " + s.Trim());
 			byte[] bytes = Encoding.UTF8.GetBytes(s);
-			stream.Write(bytes, 0, bytes.Length);
+			try
+			{
+				stream.Write(bytes, 0, bytes.Length);
+			}
+			catch (IOException)
+			{
+				Connect();
+				stream.Write(bytes, 0, bytes.Length);
+			}
 		}
 
 		private void Connect()
@@ -572,7 +617,7 @@ namespace FooBorf
 				stream.BeginRead(buffer, 0, 1024, onRead, null);
 				Console.WriteLine("connected...");
 			}
-			catch (IOException)
+			catch (Exception)
 			{
 				Thread.Sleep(5000);
 				Connect();
@@ -849,6 +894,63 @@ namespace FooBorf
 				Write("update \"" + tag.Substring(1) + "\"\n");
 			}
 
+		}
+
+		private void updateToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			Write("update\n");
+		}
+
+		private void addToCurrentPlaylistToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			int tab = tabControl1.SelectedIndex;
+			string tag = (string)treeView1.SelectedNode.Tag;
+
+			if (tab == 0)
+			{
+				Write("add \"" + tag.Substring(1) + "\"\n");
+			}
+			else
+			{
+				Write("playlistadd \""+playlists[tab-1].name+"\" \"" + tag.Substring(1) + "\"\n");
+				
+			}
+		}
+
+		private void playToolStripMenuItem1_Click(object sender, EventArgs e)
+		{
+			Write("clear\n");
+			string tag = (string)treeView1.SelectedNode.Tag;
+			Write("add \"" + tag.Substring(1) + "\"\n");
+			Write("play 0\n");
+		}
+
+		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			running = false;
+			client.Close();
+			idleClient.Close();
+			Thread.Sleep(100);
+		}
+
+		private void afterThisSongsamePriorityToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			string tag = (string)treeView1.SelectedNode.Tag;
+			Write("add \"" + tag.Substring(1) + "\"\n");
+		}
+
+		private void afterThisSonghigherPriorityToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			string tag = (string)treeView1.SelectedNode.Tag;
+			Write("add \"" + tag.Substring(1) + "\"\n");
+			prionewsongs = NewQueuePrio.SAME;
+		}
+
+		private void afterThisSonghigherPriorityIncrementToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			string tag = (string)treeView1.SelectedNode.Tag;
+			Write("add \"" + tag.Substring(1) + "\"\n");
+			prionewsongs = NewQueuePrio.INC;
 		}
 	}
 }
